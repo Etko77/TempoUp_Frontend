@@ -18,7 +18,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<StoredUser | null>(null);
   const [isBootstrapping, setIsBootstrapping] = useState(true);
 
-  // On app launch, try to restore the session from SecureStore.
   useEffect(() => {
     (async () => {
       try {
@@ -31,7 +30,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })();
   }, []);
 
-  // If the HTTP client gives up on refresh, drop the user.
   useEffect(() => {
     setOnAuthFailure(() => setUser(null));
   }, []);
