@@ -45,8 +45,8 @@ export function DiscoveryScreen() {
       if (result.matched) {
         Alert.alert("It's a match!", `You and ${current.displayName} have matched.`);
       }
-    } catch {
-      /* ignore; the card already advanced */
+    } catch (e){
+      console.warn('[discovery] swipe failed:',e)
     }
   }, [current]);
 
@@ -65,13 +65,16 @@ export function DiscoveryScreen() {
     }).start(() => advance(direction));
   }, [advance, position]);
 
+  const swipeOutRef = useRef(swipeOut);
+  swipeOutRef.current = swipeOut;
+
   const panResponder = useRef(
     PanResponder.create({
       onMoveShouldSetPanResponder: (_e, g) => Math.abs(g.dx) > 6,
       onPanResponderMove: (_e, g) => position.setValue({ x: g.dx, y: g.dy }),
       onPanResponderRelease: (_e, g) => {
-        if (g.dx > SWIPE_THRESHOLD)       swipeOut('LIKE');
-        else if (g.dx < -SWIPE_THRESHOLD) swipeOut('PASS');
+        if (g.dx > SWIPE_THRESHOLD)       swipeOutRef.current('LIKE');
+        else if (g.dx < -SWIPE_THRESHOLD) swipeOutRef.current('PASS');
         else Animated.spring(position, { toValue: { x: 0, y: 0 }, useNativeDriver: false }).start();
       },
     }),
