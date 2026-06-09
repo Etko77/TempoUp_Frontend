@@ -1,20 +1,26 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Animated, PanResponder, View, Text, Dimensions, StyleSheet, Pressable, Alert } from 'react-native';
+import { Animated, PanResponder, View, Text, Dimensions, StyleSheet, Pressable } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Screen } from '@/components/Screen';
 import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
+import { MatchModal, MatchInfo } from '@/components/MatchModal';
 import { useTheme } from '@/theme/ThemeContext';
 import { api } from '@/api/endpoints';
 import type { DiscoveryCandidate, SwipeDirection } from '@/types/api';
+import type { MainStackParamList } from '@/navigation/types';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 const SWIPE_THRESHOLD = SCREEN_W * 0.25;
 
 export function DiscoveryScreen() {
   const { colors, spacing, radius, typography } = useTheme();
+  const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>();
   const [feed, setFeed] = useState<DiscoveryCandidate[]>([]);
   const [index, setIndex] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [matched, setMatched] = useState<MatchInfo | null>(null);
   const position = useRef(new Animated.ValueXY()).current;
 
   const loadFeed = useCallback(async () => {
@@ -42,11 +48,16 @@ export function DiscoveryScreen() {
         targetUserId: current.userId,
         direction,
       });
-      if (result.matched) {
-        Alert.alert("It's a match!", `You and ${current.displayName} have matched.`);
+      if (result.matched && result.conversationId) {
+        setMatched({
+          otherUserId: current.userId,
+          otherName: current.displayName,
+          otherPhotoUrl: current.photoUrl,
+          conversationId: result.conversationId,
+        });
       }
-    } catch (e){
-      console.warn('[discovery] swipe failed:',e)
+    } catch {
+      /* ignore; the card already advanced */
     }
   }, [current]);
 
@@ -65,16 +76,13 @@ export function DiscoveryScreen() {
     }).start(() => advance(direction));
   }, [advance, position]);
 
-  const swipeOutRef = useRef(swipeOut);
-  swipeOutRef.current = swipeOut;
-
   const panResponder = useRef(
     PanResponder.create({
       onMoveShouldSetPanResponder: (_e, g) => Math.abs(g.dx) > 6,
       onPanResponderMove: (_e, g) => position.setValue({ x: g.dx, y: g.dy }),
       onPanResponderRelease: (_e, g) => {
-        if (g.dx > SWIPE_THRESHOLD)       swipeOutRef.current('LIKE');
-        else if (g.dx < -SWIPE_THRESHOLD) swipeOutRef.current('PASS');
+        if (g.dx > SWIPE_THRESHOLD)       swipeOut('LIKE');
+        else if (g.dx < -SWIPE_THRESHOLD) swipeOut('PASS');
         else Animated.spring(position, { toValue: { x: 0, y: 0 }, useNativeDriver: false }).start();
       },
     }),
@@ -157,6 +165,18 @@ export function DiscoveryScreen() {
           <Text style={[styles.actionGlyph, { color: colors.textInverse }]}>♥</Text>
         </Pressable>
       </View>
+
+      <MatchModal
+        match={matched}
+        onDismiss={() => setMatched(null)}
+        onSendMessage={(m) => {
+          setMatched(null);
+          navigation.navigate('Conversation', {
+            conversationId: m.conversationId,
+            otherName: m.otherName,
+          });
+        }}
+      />
     </Screen>
   );
 }
@@ -240,10 +260,26 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderRadius: 8,
   },
-  likeBadge: { right: 24, transform: [{ rotate: '-20deg' }] },
-  passBadge: { left: 24, transform: [{ rotate: '20deg' }] },
-  badgeText: { fontSize: 22, fontWeight: '900', letterSpacing: 2 },
-  actions: { flexDirection: 'row', justifyContent: 'space-around', gap: 24 },
+  likeBadge: { 
+    right: 24, 
+    transform: [{ rotate: '-20deg' }] 
+  
+  },
+  passBadge: { 
+    left: 24, 
+    transform: [{ rotate: '20deg' }]
+  },
+  badgeText: { 
+    fontSize: 22, 
+    fontWeight: '900', 
+    letterSpacing: 2 
+  },
+  actions: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-around', 
+    gap: 24 
+  
+  },
   actionBtn: {
     width: 64, height: 64, borderRadius: 32,
     alignItems: 'center', justifyContent: 'center',
@@ -251,5 +287,8 @@ const styles = StyleSheet.create({
     elevation: 2,
     shadowOpacity: 0.1, shadowRadius: 6, shadowOffset: { width: 0, height: 2 },
   },
-  actionGlyph: { fontSize: 28, fontWeight: '700' },
+  actionGlyph: { 
+    fontSize: 28, 
+    fontWeight: '700' 
+  },
 });
