@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { FlatList, View, Text, Pressable, RefreshControl } from 'react-native';
 import { Screen } from '@/components/Screen';
 import { Avatar } from '@/components/Avatar';
+import { Loading } from '@/components/Loading';
 import { useTheme } from '@/theme/ThemeContext';
 import { api } from '@/api/endpoints';
 import type { MatchResponse } from '@/types/api';
@@ -13,22 +14,31 @@ export function MatchesScreen() {
   const { colors, spacing, typography, radius } = useTheme();
   const navigation = useNavigation<NativeStackScreenProps<MainStackParamList>['navigation']>();
   const [matches, setMatches] = useState<MatchResponse[]>([]);
-  const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);    
+  const [refreshing, setRefreshing] = useState(false); 
 
-  const load = useCallback(async () => {
-    setRefreshing(true);
+  const fetchMatches = useCallback(async () => {
     try {
       setMatches(await api.matches.list());
-    } finally {
-      setRefreshing(false);
+    } catch {
+      // keep whatever we had on the matches screen;
     }
   }, []);
 
   useEffect(() => {
-    load();
-    const unsub = navigation.addListener('focus', load);
-    return unsub;
-  }, [load, navigation]);
+    (async () => {
+      await fetchMatches();
+      setLoading(false);
+    })();
+    const removeFocusListener = navigation.addListener('focus', fetchMatches);
+    return removeFocusListener;
+  }, [fetchMatches, navigation]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchMatches();
+    setRefreshing(false);
+  }, [fetchMatches]);
 
   return (
     <Screen padded={false}>
@@ -37,10 +47,13 @@ export function MatchesScreen() {
         <Text style={{ color: colors.textSecondary }}>Tap to start chatting.</Text>
       </View>
 
+      {loading ? (
+        <Loading label="Loading matches…" />
+      ) : (
       <FlatList
         data={matches}
         keyExtractor={(m) => m.matchId}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} tintColor={colors.primary} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
         contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl }}
         ListEmptyComponent={
           <View style={{ alignItems: 'center', marginTop: spacing.xxl }}>
@@ -79,6 +92,7 @@ export function MatchesScreen() {
           </Pressable>
         )}
       />
+      )}
     </Screen>
   );
 }

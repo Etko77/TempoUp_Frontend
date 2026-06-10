@@ -7,6 +7,7 @@ import { TextField } from '@/components/TextField';
 import { useTheme } from '@/theme/ThemeContext';
 import { useAuth } from '@/auth/AuthContext';
 import { api } from '@/api/endpoints';
+import { ApiError } from '@/api/client';
 import type { ProfileResponse } from '@/types/api';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -20,6 +21,7 @@ export function ProfileScreen() {
   const [displayName, setDisplayName] = useState('');
   const [bio, setBio] = useState('');
   const [city, setCity] = useState('');
+  const [photoUrl, setPhotoUrl] = useState('');
   const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
@@ -28,6 +30,7 @@ export function ProfileScreen() {
     setDisplayName(p.displayName);
     setBio(p.bio ?? '');
     setCity(p.city ?? '');
+    setPhotoUrl(p.photoUrl ?? '');
   }, []);
 
   useEffect(() => { load(); }, [load]);
@@ -39,9 +42,13 @@ export function ProfileScreen() {
         displayName: displayName.trim() || undefined,
         bio: bio.trim() || undefined,
         city: city.trim() || undefined,
+        photoUrl: photoUrl.trim() || undefined,
       });
       setProfile(updated);
       Alert.alert('Saved', 'Your profile has been updated.');
+    } catch (e) {
+      const msg = e instanceof ApiError ? e.body?.message ?? e.message : 'Could not save. Please try again.';
+      Alert.alert('Could not save profile', msg);
     } finally {
       setSaving(false);
     }
@@ -51,7 +58,7 @@ export function ProfileScreen() {
     <Screen>
       <ScrollView contentContainerStyle={{ paddingBottom: spacing.xxl }}>
         <View style={{ alignItems: 'center', marginBottom: spacing.xl }}>
-          <Avatar uri={profile?.photoUrl} name={displayName || user?.email || '??'} size={96} />
+          <Avatar uri={photoUrl.trim() || undefined} name={displayName || user?.email || '??'} size={96} />
           <Text style={[typography.h2, { color: colors.text, marginTop: spacing.md }]}>
             {displayName || '—'}
           </Text>
@@ -59,6 +66,14 @@ export function ProfileScreen() {
         </View>
 
         <TextField label="Display name" value={displayName} onChangeText={setDisplayName} />
+        <TextField
+          label="Photo URL"
+          value={photoUrl}
+          onChangeText={setPhotoUrl}
+          placeholder="https://…/your-photo.jpg"
+          autoCapitalize="none"
+          keyboardType="url"
+        />
         <TextField label="City" value={city} onChangeText={setCity} placeholder="e.g. Sofia" />
         <TextField
           label="Bio"

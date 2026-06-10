@@ -6,6 +6,7 @@ import { Chip } from '@/components/Chip';
 import { TextField } from '@/components/TextField';
 import { useTheme } from '@/theme/ThemeContext';
 import { api } from '@/api/endpoints';
+import { ApiError } from '@/api/client';
 import type { ProficiencyLevel, SkillResponse, SportResponse, UserSportResponse } from '@/types/api';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { MainStackParamList } from '@/navigation/types';
@@ -75,6 +76,9 @@ export function SportPickerScreen({ route, navigation }: Props) {
         skillIds: Array.from(chosenSkills),
       });
       navigation.goBack();
+    } catch (e) {
+      const msg = e instanceof ApiError ? e.body?.message ?? e.message : 'Could not save. Please try again.';
+      Alert.alert('Could not save sport', msg);
     } finally {
       setSaving(false);
     }
