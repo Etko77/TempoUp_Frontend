@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Animated, PanResponder, View, Text, Dimensions, StyleSheet, Pressable } from 'react-native';
+import { Animated, PanResponder, View, Text, Dimensions, StyleSheet, Pressable, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Screen } from '@/components/Screen';
@@ -76,13 +76,19 @@ export function DiscoveryScreen() {
     }).start(() => advance(direction));
   }, [advance, position]);
 
+  // The PanResponder below is created once, so it would capture the first-render
+  // swipeOut (when the feed is still empty). Route through a ref that always points
+  // at the latest swipeOut, otherwise drag-swipes never record and matches break.
+  const swipeOutRef = useRef(swipeOut);
+  swipeOutRef.current = swipeOut;
+
   const panResponder = useRef(
     PanResponder.create({
       onMoveShouldSetPanResponder: (_e, g) => Math.abs(g.dx) > 6,
       onPanResponderMove: (_e, g) => position.setValue({ x: g.dx, y: g.dy }),
       onPanResponderRelease: (_e, g) => {
-        if (g.dx > SWIPE_THRESHOLD)       swipeOut('LIKE');
-        else if (g.dx < -SWIPE_THRESHOLD) swipeOut('PASS');
+        if (g.dx > SWIPE_THRESHOLD)       swipeOutRef.current('LIKE');
+        else if (g.dx < -SWIPE_THRESHOLD) swipeOutRef.current('PASS');
         else Animated.spring(position, { toValue: { x: 0, y: 0 }, useNativeDriver: false }).start();
       },
     }),
@@ -204,7 +210,15 @@ function CardInner({ candidate }: { candidate: DiscoveryCandidate }) {
   return (
     <View style={{ flex: 1, padding: spacing.xl, justifyContent: 'space-between' }}>
       <View style={{ alignItems: 'center' }}>
-        <Avatar uri={candidate.photoUrl} name={candidate.displayName} size={140} />
+        {candidate.photoUrl ? (
+          <Image
+          source={{uri: candidate.photoUrl}}
+          style={{width: "100%", height: 320, borderRadius: 16}}
+          resizeMode="cover"
+          />
+        ): (
+          <Avatar uri={candidate.photoUrl} name={candidate.displayName} size={140} />
+        )}
         <Text style={[typography.h2, { color: colors.text, marginTop: spacing.lg }]}>
           {candidate.displayName}
         </Text>
