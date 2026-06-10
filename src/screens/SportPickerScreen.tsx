@@ -38,7 +38,6 @@ export function SportPickerScreen({ route, navigation }: Props) {
     })();
   }, []);
 
-  // Hydrate the editor when a sport is chosen, pre-filling existing settings
   useEffect(() => {
     if (!selectedSportId) return;
     (async () => {

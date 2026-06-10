@@ -12,6 +12,8 @@ import type { ProfileResponse } from '@/types/api';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { MainStackParamList } from '@/navigation/types';
+import * as ImagePicker from 'expo-image-picker';
+import { uploadImageAsync } from '@/utils/uploadImage';
 
 export function ProfileScreen() {
   const { colors, spacing, typography } = useTheme();
@@ -23,6 +25,7 @@ export function ProfileScreen() {
   const [city, setCity] = useState('');
   const [photoUrl, setPhotoUrl] = useState('');
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   const load = useCallback(async () => {
     const p = await api.profile.me();
@@ -54,11 +57,44 @@ export function ProfileScreen() {
     }
   }, [bio, city, displayName]);
 
+  const pickImage = useCallback(async () => {
+  const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+  if (!perm.granted) {
+    Alert.alert('Permission needed', 'Allow photo access to choose a picture.');
+    return;
+  }
+
+  const result = await ImagePicker.launchImageLibraryAsync({
+    mediaTypes: ['images'], 
+    allowsEditing: true,
+    aspect: [1, 1],
+    quality: 0.7,
+  });
+  if (result.canceled) return;
+
+  try {
+    setUploading(true);
+    const url = await uploadImageAsync(result.assets[0].uri);
+    setPhotoUrl(url); 
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : 'Could not upload the image.';
+    Alert.alert('Upload failed', msg);
+  } finally {
+    setUploading(false);
+  }
+}, []);
+
   return (
     <Screen>
       <ScrollView contentContainerStyle={{ paddingBottom: spacing.xxl }}>
         <View style={{ alignItems: 'center', marginBottom: spacing.xl }}>
           <Avatar uri={photoUrl.trim() || undefined} name={displayName || user?.email || '??'} size={96} />
+          <Button
+            title={uploading ? 'Uploading…' : 'Choose from gallery'}
+            variant="secondary"
+            onPress={pickImage}
+            loading={uploading}
+          />
           <Text style={[typography.h2, { color: colors.text, marginTop: spacing.md }]}>
             {displayName || '—'}
           </Text>
