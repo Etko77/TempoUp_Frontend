@@ -6,7 +6,7 @@ import { useTheme } from "@/theme/ThemeContext";
 import { useAuth } from "@/auth/AuthContext";
 
 export interface MatchInfo {
-    otherUserInfo: string;
+    otherUserId: string;
     otherName: string;
     otherPhotoUrl?: string | null;
     conversationId: string;
