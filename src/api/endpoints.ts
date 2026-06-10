@@ -87,5 +87,7 @@ export const api = {
         method: 'POST',
         body,
       }),
+    read: (conversationId: UUID) =>
+      request<void>(`/api/conversations/${conversationId}/read`, { method: 'POST' }),
   },
 };
