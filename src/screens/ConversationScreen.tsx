@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, FlatList, TextInput, Pressable, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, FlatList, TextInput, Pressable, StyleSheet, KeyboardAvoidingView, Platform, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '@/theme/ThemeContext';
 import { api } from '@/api/endpoints';
@@ -17,6 +17,9 @@ type LocalMessage = MessageResponse & { pending?: boolean; failed?: boolean };
 
 //Right side time width
 const TIME_REVEAL_RIGHT = 50;
+
+// How tall the composer can grow before it starts scrolling (≈30% of the screen).
+const INPUT_MAX_HEIGHT = 220;
 
 export function ConversationScreen({ route, navigation }: Props) {
   const { conversationId, otherName } = route.params;
@@ -139,13 +142,18 @@ export function ConversationScreen({ route, navigation }: Props) {
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={120}
       >
         <GestureDetector gesture={swipeGesture}>
           <FlatList
             ref={listRef}
             data={messages}
             keyExtractor={(m) => m.id}
-            contentContainerStyle={{ padding: spacing.lg, paddingBottom: spacing.md }}
+            contentContainerStyle={{
+              padding: spacing.lg,
+              paddingBottom: spacing.md,
+              flexGrow: 1, // messages fill from the top down
+            }}
             onContentSizeChange={scrollToEnd}
             renderItem={({ item }) => {
               const mine = item.senderId === user?.userId;
@@ -223,9 +231,16 @@ export function ConversationScreen({ route, navigation }: Props) {
             onChangeText={setDraft}
             placeholder="Write a message…"
             placeholderTextColor={colors.textSecondary}
+            
             style={[
               styles.input,
-              { backgroundColor: colors.surface, color: colors.text, borderRadius: radius.pill, borderColor: colors.border },
+              {
+                backgroundColor: colors.surface,
+                color: colors.text,
+                borderRadius: radius.lg,
+                borderColor: colors.border,
+                maxHeight: INPUT_MAX_HEIGHT,
+              },
             ]}
             multiline
           />
@@ -279,9 +294,9 @@ const styles = StyleSheet.create({
   bubble: { maxWidth: '80%' },
   composer: { flexDirection: 'row', alignItems: 'flex-end', borderTopWidth: StyleSheet.hairlineWidth, gap: 8 },
   input: {
-    flex: 1, minHeight: 40, maxHeight: 120,
+    flex: 1, minHeight: 44,
     paddingHorizontal: 16, paddingVertical: 10,
-    borderWidth: 1, fontSize: 15,
+    borderWidth: 1, fontSize: 16,
   },
   send: { paddingHorizontal: 18, paddingVertical: 10, alignSelf: 'flex-end' },
 });
