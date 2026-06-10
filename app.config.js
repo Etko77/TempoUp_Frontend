@@ -18,6 +18,10 @@ export default {
     ios: {
       supportsTablet: true,
       bundleIdentifier: process.env.IOS_BUNDLE_ID || "com.tempoup.mobile",
+      infoPlist: {
+        NSPhotoLibraryUsageDescription:
+          'TempoUp needs access to your photos so you can set a profile picture.',
+      },
     },
 
     android: {
@@ -34,6 +38,10 @@ export default {
     extra: {
       apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL,
       wsBaseUrl: process.env.EXPO_PUBLIC_WS_BASE_URL,
+      cloudinaryCloudName: 
+      process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME,
+      cloudinaryUploadPreset: 
+      process.env.EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET,
     },
   },
 };
