@@ -50,6 +50,13 @@ export interface UpdateProfileRequest {
 // ----- Sports & skills ----------------------------------------------
 export type ProficiencyLevel = 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';
 
+export type MetricType =
+  | 'NONE'
+  | 'STRENGTH'
+  | 'ENDURANCE_REPS'
+  | 'ENDURANCE_DISTANCE'
+  | 'SPEED';
+
 export interface SportResponse {
   id: UUID;
   name: string;
@@ -62,6 +69,19 @@ export interface SkillResponse {
   sportId: UUID;
   name: string;
   description: string | null;
+  metricType: MetricType;
+}
+
+export interface UserSkillResponse {
+  skillId: UUID;
+  name: string;
+  metricType: MetricType;
+  weightKg: number | null;
+  reps: number | null;
+  distanceKm: number | null;
+  durationSeconds: number | null;
+  speedKmh: number | null;
+  starred: boolean;
 }
 
 export interface UserSportResponse {
@@ -69,14 +89,24 @@ export interface UserSportResponse {
   sportName: string;
   proficiencyLevel: ProficiencyLevel;
   priority: boolean;
-  skills: SkillResponse[];
+  skills: UserSkillResponse[];
+}
+
+export interface SkillSelection {
+  skillId: UUID;
+  weightKg?: number;
+  reps?: number;
+  distanceKm?: number;
+  durationSeconds?: number;
+  speedKmh?: number;
+  starred: boolean;
 }
 
 export interface SetUserSportRequest {
   sportId: UUID;
   proficiencyLevel: ProficiencyLevel;
   priority: boolean;
-  skillIds: UUID[];
+  skills: SkillSelection[];
 }
 
 export type SuggestionType = 'SPORT' | 'SKILL';
@@ -87,6 +117,7 @@ export interface CreateSuggestionRequest {
   parentSportId?: UUID;
   name: string;
   description?: string;
+  metricType?: MetricType;
 }
 
 export interface SuggestionResponse {
@@ -95,6 +126,7 @@ export interface SuggestionResponse {
   parentSportId: UUID | null;
   name: string;
   description: string | null;
+  metricType: MetricType | null;
   status: SuggestionStatus;
   reviewNote: string | null;
   createdAt: string;
@@ -111,6 +143,7 @@ export interface DiscoveryCandidate {
   distanceKm: number | null;
   sharedSports: number;
   sharedSkills: number;
+  sharedSportNames: string[];
   score: number;
 }
 
@@ -143,6 +176,7 @@ export interface ConversationResponse {
   otherUserId: UUID;
   otherDisplayName: string;
   lastMessageAt: string | null;
+  unreadCount: number;
 }
 
 export interface MessageResponse {
