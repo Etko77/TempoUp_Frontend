@@ -7,13 +7,45 @@ import { TextField } from '@/components/TextField';
 import { useTheme } from '@/theme/ThemeContext';
 import { api } from '@/api/endpoints';
 import { ApiError } from '@/api/client';
-import type { ProficiencyLevel, SkillResponse, SportResponse, UserSportResponse } from '@/types/api';
+import { METRIC_FIELDS, METRIC_LABELS, type MetricFieldKey } from '@/utils/metrics';
+import type {
+  MetricType,
+  ProficiencyLevel,
+  SkillResponse,
+  SkillSelection,
+  SportResponse,
+  UserSportResponse,
+} from '@/types/api';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { MainStackParamList } from '@/navigation/types';
 
 type Props = NativeStackScreenProps<MainStackParamList, 'SportPicker'>;
 
 const LEVELS: ProficiencyLevel[] = ['BEGINNER', 'INTERMEDIATE', 'ADVANCED'];
+const SUGGEST_METRICS: MetricType[] = ['NONE', 'STRENGTH', 'ENDURANCE_REPS', 'ENDURANCE_DISTANCE', 'SPEED'];
+const MAX_STARRED = 3;
+
+type SkillState = {
+  weightKg: string;
+  reps: string;
+  distanceKm: string;
+  durationMin: string;
+  speedKmh: string;
+  starred: boolean;
+};
+
+const EMPTY_STATE: SkillState = {
+  weightKg: '', reps: '', distanceKm: '', durationMin: '', speedKmh: '', starred: false,
+};
+
+const numOrUndef = (s: string): number | undefined => {
+  const n = parseFloat(s.replace(',', '.'));
+  return Number.isFinite(n) ? n : undefined;
+};
+const intOrUndef = (s: string): number | undefined => {
+  const n = parseInt(s, 10);
+  return Number.isFinite(n) ? n : undefined;
+};
 
 export function SportPickerScreen({ route, navigation }: Props) {
   const { colors, spacing, radius, typography } = useTheme();
@@ -23,13 +55,13 @@ export function SportPickerScreen({ route, navigation }: Props) {
   const [mine, setMine] = useState<UserSportResponse[]>([]);
   const [selectedSportId, setSelectedSportId] = useState<string | null>(initialSportId ?? null);
   const [skills, setSkills] = useState<SkillResponse[]>([]);
-  const [chosenSkills, setChosenSkills] = useState<Set<string>>(new Set());
+  const [chosen, setChosen] = useState<Record<string, SkillState>>({});
   const [level, setLevel] = useState<ProficiencyLevel>('BEGINNER');
   const [priority, setPriority] = useState(false);
   const [saving, setSaving] = useState(false);
   const [suggestName, setSuggestName] = useState('');
+  const [suggestMetric, setSuggestMetric] = useState<MetricType>('NONE');
 
-  // Load the public sports catalog + current user's existing selections
   useEffect(() => {
     (async () => {
       const [s, m] = await Promise.all([api.sports.list(), api.mySports.list()]);
@@ -45,34 +77,100 @@ export function SportPickerScreen({ route, navigation }: Props) {
       setSkills(list);
       const existing = mine.find((m) => m.sportId === selectedSportId);
       if (existing) {
-        setChosenSkills(new Set(existing.skills.map((sk) => sk.id)));
+        const map: Record<string, SkillState> = {};
+        existing.skills.forEach((sk) => {
+          map[sk.skillId] = {
+            weightKg: sk.weightKg?.toString() ?? '',
+            reps: sk.reps?.toString() ?? '',
+            distanceKm: sk.distanceKm?.toString() ?? '',
+            durationMin: sk.durationSeconds != null ? (sk.durationSeconds / 60).toString() : '',
+            speedKmh: sk.speedKmh?.toString() ?? '',
+            starred: sk.starred,
+          };
+        });
+        setChosen(map);
         setLevel(existing.proficiencyLevel);
         setPriority(existing.priority);
       } else {
-        setChosenSkills(new Set());
+        setChosen({});
         setLevel('BEGINNER');
         setPriority(false);
       }
     })();
   }, [selectedSportId, mine]);
 
+  const metricOf = useCallback(
+    (skillId: string): MetricType => skills.find((s) => s.id === skillId)?.metricType ?? 'NONE',
+    [skills],
+  );
+
   const toggleSkill = useCallback((id: string) => {
-    setChosenSkills((curr) => {
-      const next = new Set(curr);
-      if (next.has(id)) next.delete(id); else next.add(id);
+    setChosen((curr) => {
+      const next = { ...curr };
+      if (next[id]) delete next[id];
+      else next[id] = { ...EMPTY_STATE };
       return next;
     });
   }, []);
+
+  const setField = useCallback((id: string, key: MetricFieldKey, value: string) => {
+    setChosen((curr) => ({ ...curr, [id]: { ...curr[id], [key]: value } }));
+  }, []);
+
+  const starredElsewhere = useMemo(
+    () =>
+      mine
+        .filter((m) => m.sportId !== selectedSportId)
+        .reduce((sum, m) => sum + m.skills.filter((sk) => sk.starred).length, 0),
+    [mine, selectedSportId],
+  );
+  const starredHere = useMemo(
+    () => Object.values(chosen).filter((st) => st.starred).length,
+    [chosen],
+  );
+  const starsLeft = MAX_STARRED - starredElsewhere - starredHere;
+
+  const toggleStar = useCallback(
+    (id: string) => {
+      setChosen((curr) => {
+        const st = curr[id];
+        if (!st) return curr;
+        if (!st.starred && starsLeft <= 0) {
+          Alert.alert('Star limit', `You can star up to ${MAX_STARRED} skills across your profile.`);
+          return curr;
+        }
+        return { ...curr, [id]: { ...st, starred: !st.starred } };
+      });
+    },
+    [starsLeft],
+  );
 
   const save = useCallback(async () => {
     if (!selectedSportId) return;
     setSaving(true);
     try {
+      const skillsPayload: SkillSelection[] = Object.entries(chosen).map(([skillId, st]) => {
+        const mt = metricOf(skillId);
+        const sel: SkillSelection = { skillId, starred: st.starred };
+        if (mt === 'STRENGTH') {
+          sel.weightKg = numOrUndef(st.weightKg);
+          sel.reps = intOrUndef(st.reps);
+        } else if (mt === 'ENDURANCE_REPS') {
+          sel.reps = intOrUndef(st.reps);
+        } else if (mt === 'ENDURANCE_DISTANCE') {
+          sel.distanceKm = numOrUndef(st.distanceKm);
+          const min = numOrUndef(st.durationMin);
+          sel.durationSeconds = min != null ? Math.round(min * 60) : undefined;
+        } else if (mt === 'SPEED') {
+          sel.speedKmh = numOrUndef(st.speedKmh);
+        }
+        return sel;
+      });
       await api.mySports.set({
         sportId: selectedSportId,
         proficiencyLevel: level,
         priority,
-        skillIds: Array.from(chosenSkills),
+        skills: skillsPayload,
       });
       navigation.goBack();
     } catch (e) {
@@ -81,7 +179,7 @@ export function SportPickerScreen({ route, navigation }: Props) {
     } finally {
       setSaving(false);
     }
-  }, [chosenSkills, level, navigation, priority, selectedSportId]);
+  }, [chosen, level, metricOf, navigation, priority, selectedSportId]);
 
   const suggest = useCallback(async () => {
     const name = suggestName.trim();
@@ -91,13 +189,15 @@ export function SportPickerScreen({ route, navigation }: Props) {
         type: selectedSportId ? 'SKILL' : 'SPORT',
         parentSportId: selectedSportId ?? undefined,
         name,
+        metricType: selectedSportId ? suggestMetric : undefined,
       });
       setSuggestName('');
+      setSuggestMetric('NONE');
       Alert.alert('Thanks!', 'Your suggestion has been sent to an admin for review.');
     } catch (e) {
       Alert.alert('Could not submit', 'Please try again later.');
     }
-  }, [selectedSportId, suggestName]);
+  }, [selectedSportId, suggestName, suggestMetric]);
 
   const selectedSport = useMemo(
     () => sports.find((s) => s.id === selectedSportId) ?? null,
@@ -150,26 +250,30 @@ export function SportPickerScreen({ route, navigation }: Props) {
               }}
             >
               <Text style={{ color: colors.text, flex: 1 }}>
-                ⭐ Priority sport — boost matches with this sport
+                ⭐ Priority sport — shown first on your profile
               </Text>
               <Text style={{ color: colors.primary, fontWeight: '700' }}>{priority ? 'ON' : 'OFF'}</Text>
             </Pressable>
 
-            <Text style={[typography.h3, { color: colors.text, marginBottom: spacing.sm }]}>
-              Skills you train
-            </Text>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: spacing.lg }}>
-              {skills.map((sk) => (
-                <Chip
-                  key={sk.id}
-                  label={sk.name}
-                  selected={chosenSkills.has(sk.id)}
-                  onPress={() => toggleSkill(sk.id)}
-                />
-              ))}
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.sm }}>
+              <Text style={[typography.h3, { color: colors.text, flex: 1 }]}>Skills you train</Text>
+              <Text style={{ color: colors.textSecondary, fontSize: 12 }}>
+                {Math.max(0, starsLeft)} ★ left
+              </Text>
             </View>
 
-            <Text style={[typography.h3, { color: colors.text, marginBottom: spacing.sm }]}>
+            {skills.map((sk) => (
+              <SkillRow
+                key={sk.id}
+                skill={sk}
+                state={chosen[sk.id]}
+                onToggle={() => toggleSkill(sk.id)}
+                onField={(key, value) => setField(sk.id, key, value)}
+                onStar={() => toggleStar(sk.id)}
+              />
+            ))}
+
+            <Text style={[typography.h3, { color: colors.text, marginTop: spacing.lg, marginBottom: spacing.sm }]}>
               Missing a skill?
             </Text>
             <TextField
@@ -177,6 +281,19 @@ export function SportPickerScreen({ route, navigation }: Props) {
               onChangeText={setSuggestName}
               placeholder={`Suggest a skill for ${selectedSport.name}`}
             />
+            <Text style={{ color: colors.textSecondary, fontSize: 12, marginBottom: spacing.xs }}>
+              What does it measure?
+            </Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: spacing.md }}>
+              {SUGGEST_METRICS.map((mt) => (
+                <Chip
+                  key={mt}
+                  label={METRIC_LABELS[mt]}
+                  selected={suggestMetric === mt}
+                  onPress={() => setSuggestMetric(mt)}
+                />
+              ))}
+            </View>
             <Button title="Send suggestion" variant="secondary" onPress={suggest} />
           </>
         )}
@@ -188,5 +305,74 @@ export function SportPickerScreen({ route, navigation }: Props) {
         </View>
       ) : null}
     </Screen>
+  );
+}
+
+function SkillRow({
+  skill,
+  state,
+  onToggle,
+  onField,
+  onStar,
+}: {
+  skill: SkillResponse;
+  state: SkillState | undefined;
+  onToggle: () => void;
+  onField: (key: MetricFieldKey, value: string) => void;
+  onStar: () => void;
+}) {
+  const { colors, spacing, radius, typography } = useTheme();
+  const selected = !!state;
+  const fields = METRIC_FIELDS[skill.metricType];
+
+  return (
+    <View
+      style={{
+        borderWidth: 1,
+        borderColor: selected ? colors.primary : colors.border,
+        backgroundColor: selected ? colors.primaryMuted : colors.surface,
+        borderRadius: radius.md,
+        padding: spacing.md,
+        marginBottom: spacing.sm,
+      }}
+    >
+      <Pressable onPress={onToggle} style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <View
+          style={{
+            width: 22, height: 22, borderRadius: 6, marginRight: spacing.md,
+            borderWidth: 2, borderColor: selected ? colors.primary : colors.border,
+            backgroundColor: selected ? colors.primary : 'transparent',
+            alignItems: 'center', justifyContent: 'center',
+          }}
+        >
+          {selected ? <Text style={{ color: colors.textInverse, fontWeight: '900', fontSize: 13 }}>✓</Text> : null}
+        </View>
+        <Text style={[typography.bodyBold, { color: colors.text, flex: 1 }]}>{skill.name}</Text>
+        {selected ? (
+          <Pressable onPress={onStar} hitSlop={8} style={{ paddingHorizontal: spacing.xs }}>
+            <Text style={{ fontSize: 18, color: state?.starred ? colors.warning : colors.textSecondary }}>
+              {state?.starred ? '★' : '☆'}
+            </Text>
+          </Pressable>
+        ) : null}
+      </Pressable>
+
+      {selected && fields.length > 0 ? (
+        <View style={{ flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm }}>
+          {fields.map((f) => (
+            <View key={f.key} style={{ flex: 1 }}>
+              <TextField
+                label={f.label}
+                value={state ? state[f.key] : ''}
+                onChangeText={(v) => onField(f.key, v)}
+                keyboardType="numeric"
+                placeholder="0"
+                containerStyle={{ marginBottom: 0 }}
+              />
+            </View>
+          ))}
+        </View>
+      ) : null}
+    </View>
   );
 }

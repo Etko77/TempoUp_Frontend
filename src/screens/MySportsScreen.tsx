@@ -2,8 +2,8 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, FlatList, Pressable, Alert } from 'react-native';
 import { Screen } from '@/components/Screen';
 import { Button } from '@/components/Button';
-import { Chip } from '@/components/Chip';
 import { useTheme } from '@/theme/ThemeContext';
+import { formatSkillData } from '@/utils/metrics';
 import { api } from '@/api/endpoints';
 import type { UserSportResponse } from '@/types/api';
 import { useNavigation } from '@react-navigation/native';
@@ -85,10 +85,17 @@ export function MySportsScreen() {
             </View>
 
             {item.skills.length > 0 ? (
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: spacing.sm }}>
-                {item.skills.map((sk) => (
-                  <Chip key={sk.id} label={sk.name} />
-                ))}
+              <View style={{ marginTop: spacing.sm, gap: 4 }}>
+                {item.skills.map((sk) => {
+                  const data = formatSkillData(sk);
+                  return (
+                    <Text key={sk.skillId} style={{ color: colors.textSecondary, fontSize: 13 }}>
+                      {sk.starred ? <Text style={{ color: colors.warning }}>★ </Text> : null}
+                      {sk.name}
+                      {data ? <Text style={{ color: colors.text }}>{`  ${data}`}</Text> : null}
+                    </Text>
+                  );
+                })}
               </View>
             ) : null}
           </View>

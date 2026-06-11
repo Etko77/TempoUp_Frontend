@@ -1,10 +1,10 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Animated, PanResponder, View, Text, Dimensions, StyleSheet, Pressable, Image } from 'react-native';
+import { Animated, PanResponder, View, Text, Dimensions, StyleSheet, Pressable } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Screen } from '@/components/Screen';
-import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
+import { DiscoveryCardInner } from '@/components/DiscoveryCard';
 import { MatchModal, MatchInfo } from '@/components/MatchModal';
 import { useTheme } from '@/theme/ThemeContext';
 import { api } from '@/api/endpoints';
@@ -101,6 +101,22 @@ export function DiscoveryScreen() {
   const likeOpacity = position.x.interpolate({ inputRange: [0, SCREEN_W / 4], outputRange: [0, 1] });
   const passOpacity = position.x.interpolate({ inputRange: [-SCREEN_W / 4, 0], outputRange: [1, 0] });
 
+  const matchModal = (
+    <MatchModal
+      match={matched}
+      onDismiss={() => setMatched(null)}
+      onSendMessage={(m) => {
+        setMatched(null);
+        navigation.navigate('Conversation', {
+          conversationId: m.conversationId,
+          otherName: m.otherName,
+          otherUserId: m.otherUserId,
+          otherPhotoUrl: m.otherPhotoUrl,
+        });
+      }}
+    />
+  );
+
   // ---------- Empty / loading states ----------
   if (loading) {
     return (
@@ -121,6 +137,7 @@ export function DiscoveryScreen() {
           </Text>
           <Button title="Refresh" onPress={loadFeed} />
         </View>
+        {matchModal}
       </Screen>
     );
   }
@@ -147,7 +164,7 @@ export function DiscoveryScreen() {
             },
           ]}
         >
-          <CardInner candidate={current} />
+          <DiscoveryCardInner candidate={current} />
           <Animated.View style={[styles.badge, styles.likeBadge, { opacity: likeOpacity, borderColor: colors.like }]}>
             <Text style={[styles.badgeText, { color: colors.like }]}>LIKE</Text>
           </Animated.View>
@@ -172,17 +189,7 @@ export function DiscoveryScreen() {
         </Pressable>
       </View>
 
-      <MatchModal
-        match={matched}
-        onDismiss={() => setMatched(null)}
-        onSendMessage={(m) => {
-          setMatched(null);
-          navigation.navigate('Conversation', {
-            conversationId: m.conversationId,
-            otherName: m.otherName,
-          });
-        }}
-      />
+      {matchModal}
     </Screen>
   );
 }
@@ -200,56 +207,7 @@ function Card({ candidate, scale = 1, muted }: { candidate: DiscoveryCandidate; 
         opacity: muted ? 0.85 : 1,
       },
     ]}>
-      <CardInner candidate={candidate} />
-    </View>
-  );
-}
-
-function CardInner({ candidate }: { candidate: DiscoveryCandidate }) {
-  const { colors, spacing, typography } = useTheme();
-  return (
-    <View style={{ flex: 1, padding: spacing.xl, justifyContent: 'space-between' }}>
-      <View style={{ alignItems: 'center' }}>
-        {candidate.photoUrl ? (
-          <Image
-          source={{uri: candidate.photoUrl}}
-          style={{width: "100%", height: 320, borderRadius: 16}}
-          resizeMode="cover"
-          />
-        ): (
-          <Avatar uri={candidate.photoUrl} name={candidate.displayName} size={140} />
-        )}
-        <Text style={[typography.h2, { color: colors.text, marginTop: spacing.lg }]}>
-          {candidate.displayName}
-        </Text>
-        {candidate.city ? (
-          <Text style={{ color: colors.textSecondary, marginTop: 4 }}>
-            {candidate.city}{candidate.distanceKm != null ? ` · ${candidate.distanceKm.toFixed(1)} km away` : ''}
-          </Text>
-        ) : null}
-      </View>
-
-      {candidate.bio ? (
-        <Text style={[typography.body, { color: colors.text, marginVertical: spacing.lg, textAlign: 'center' }]} numberOfLines={4}>
-          {candidate.bio}
-        </Text>
-      ) : null}
-
-      <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
-        <Stat label="Shared sports" value={candidate.sharedSports} />
-        <Stat label="Shared skills" value={candidate.sharedSkills} />
-        <Stat label="Match score" value={candidate.score} />
-      </View>
-    </View>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: number }) {
-  const { colors, typography } = useTheme();
-  return (
-    <View style={{ alignItems: 'center' }}>
-      <Text style={[typography.h3, { color: colors.primary }]}>{value}</Text>
-      <Text style={{ color: colors.textSecondary, fontSize: 12 }}>{label}</Text>
+      <DiscoveryCardInner candidate={candidate} />
     </View>
   );
 }
