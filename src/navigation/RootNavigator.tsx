@@ -3,10 +3,12 @@ import { ActivityIndicator, View, Text } from 'react-native';
 import { NavigationContainer, DarkTheme, DefaultTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
 import { useTheme } from '@/theme/ThemeContext';
 import { useAuth } from '@/auth/AuthContext';
 
+import { LandingScreen } from '@/screens/LandingScreen';
 import { LoginScreen } from '@/screens/LoginScreen';
 import { RegisterScreen } from '@/screens/RegisterScreen';
 import { DiscoveryScreen } from '@/screens/DiscoveryScreen';
@@ -15,6 +17,7 @@ import { ProfileScreen } from '@/screens/ProfileScreen';
 import { ConversationScreen } from '@/screens/ConversationScreen';
 import { MySportsScreen } from '@/screens/MySportsScreen';
 import { SportPickerScreen } from '@/screens/SportPickerScreen';
+import { ProfileDetailScreen } from '@/screens/ProfileDetailScreen';
 
 import type { AuthStackParamList, MainStackParamList, MainTabsParamList } from './types';
 
@@ -25,6 +28,7 @@ const Tabs = createBottomTabNavigator<MainTabsParamList>();
 function AuthNavigator() {
   return (
     <AuthStack.Navigator screenOptions={{ headerShown: false }}>
+      <AuthStack.Screen name="Landing" component={LandingScreen} />
       <AuthStack.Screen name="Login" component={LoginScreen} />
       <AuthStack.Screen name="Register" component={RegisterScreen} />
     </AuthStack.Navigator>
@@ -49,7 +53,7 @@ function MainTabs() {
       <Tabs.Screen
         name="Discover"
         component={DiscoveryScreen}
-        options={{ tabBarIcon: ({ color }) => <TabIcon glyph="♥" color={color} /> }}
+        options={{ tabBarIcon: ({ color }) => <MaterialCommunityIcons name="arm-flex" size={22} color={color} /> }}
       />
       <Tabs.Screen
         name="Matches"
@@ -83,6 +87,7 @@ function MainNavigator() {
       <MainStack.Screen name="Conversation" component={ConversationScreen} />
       <MainStack.Screen name="MySports" component={MySportsScreen} options={{ title: 'My sports' }} />
       <MainStack.Screen name="SportPicker" component={SportPickerScreen} options={{ title: 'Choose sport' }} />
+      <MainStack.Screen name="ProfileDetail" component={ProfileDetailScreen} options={{ title: 'Profile' }} />
     </MainStack.Navigator>
   );
 }
