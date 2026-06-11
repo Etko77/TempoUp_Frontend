@@ -9,9 +9,10 @@ interface Props {
   loading?: boolean;
   disabled?: boolean;
   style?: ViewStyle;
+  textColor?: string;
 }
 
-export function Button({ title, onPress, variant = 'primary', loading, disabled, style }: Props) {
+export function Button({ title, onPress, variant = 'primary', loading, disabled, style, textColor }: Props) {
   const { colors, radius, spacing, typography } = useTheme();
 
   const bg =
@@ -20,11 +21,11 @@ export function Button({ title, onPress, variant = 'primary', loading, disabled,
     : variant === 'danger' ? colors.danger
     : 'transparent';
 
-  const fg =
+  const fg = textColor ?? (
     variant === 'primary' ? colors.textInverse
     : variant === 'secondary' ? colors.primary
     : variant === 'danger' ? '#FFFFFF'
-    : colors.primary;
+    : colors.primary);
 
   const borderColor = variant === 'outline' ? colors.primary : 'transparent';
 

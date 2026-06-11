@@ -1,9 +1,11 @@
-import React, {useEffect, useRef} from "react";
+import React, {useEffect, useRef, useState} from "react";
 import {Modal, View, Text, Pressable,StyleSheet, Animated, Easing } from "react-native";
 import { Avatar } from "./Avatar";
 import { Button } from "./Button";
 import { useTheme } from "@/theme/ThemeContext";
 import { useAuth } from "@/auth/AuthContext";
+import { api } from "@/api/endpoints";
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 
 export interface MatchInfo {
     otherUserId: string;
@@ -22,6 +24,7 @@ export function MatchModal({match, onDismiss, onSendMessage}: Props){
     const {colors, spacing, radius} = useTheme();
     const {user} = useAuth();
     const animation = useRef(new Animated.Value(0)).current;
+    const [myPhotoUrl, setMyPhotoUrl] = useState<string | null>(null);
 
     useEffect(() => {
         if( match){
@@ -34,6 +37,12 @@ export function MatchModal({match, onDismiss, onSendMessage}: Props){
             }).start();
         }
     },[match, animation]);
+
+    useEffect(() => {
+        if (match && myPhotoUrl === null) {
+            api.profile.me().then((p) => setMyPhotoUrl(p.photoUrl ?? ''), () => {});
+        }
+    }, [match, myPhotoUrl]);
 
     if(!match) return null;
 
@@ -53,11 +62,11 @@ export function MatchModal({match, onDismiss, onSendMessage}: Props){
             <View style={styles.avatars}>
             <Animated.View style={{ transform: [{ scale: avatarScale }, { rotate: '-8deg' }] }}>
                 <View style={[styles.avatarRing, { borderColor: '#FFFFFF' }]}>
-                <Avatar uri={null} name={user?.email ?? '?'} size={120} />
+                <Avatar uri={myPhotoUrl || null} name={user?.email ?? '?'} size={120} />
                 </View>
             </Animated.View>
             <View style={[styles.heart, { backgroundColor: '#FFFFFF' }]}>
-                <Text style={[styles.heartGlyph, { color: colors.primaryDeep }]}>♥</Text>
+                <MaterialCommunityIcons name="arm-flex" size={24} color={colors.primaryDeep} />
             </View>
             <Animated.View style={{ transform: [{ scale: avatarScale }, { rotate: '8deg' }] }}>
                 <View style={[styles.avatarRing, { borderColor: '#FFFFFF' }]}>
@@ -71,6 +80,7 @@ export function MatchModal({match, onDismiss, onSendMessage}: Props){
                 title="Send a message"
                 onPress={() => onSendMessage(match)}
                 style={{ backgroundColor: '#FFFFFF' }}
+                textColor={colors.primaryDeep}
             />
             <View style={{ height: spacing.md }} />
             <Pressable onPress={onDismiss} style={{ alignItems: 'center', padding: spacing.md }}>
