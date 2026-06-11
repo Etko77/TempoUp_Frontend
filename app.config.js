@@ -21,6 +21,8 @@ export default {
       infoPlist: {
         NSPhotoLibraryUsageDescription:
           'TempoUp needs access to your photos so you can set a profile picture.',
+        NSCameraUsageDescription:
+          'TempoUp needs access to your camera so you can take a profile picture.',
       },
     },
 

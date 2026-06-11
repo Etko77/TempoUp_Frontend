@@ -54,6 +54,8 @@ export const api = {
       request<UserSportResponse>('/api/sports/mine', { method: 'PUT', body }),
     remove: (sportId: UUID) =>
       request<void>(`/api/sports/mine/${sportId}`, { method: 'DELETE' }),
+    byUser: (userId: UUID) =>
+      request<UserSportResponse[]>(`/api/sports/by-user/${userId}`),
   },
 
   // Community suggestions
