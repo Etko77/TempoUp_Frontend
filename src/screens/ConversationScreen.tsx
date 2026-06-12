@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, FlatList, TextInput, Pressable, StyleSheet, KeyboardAvoidingView, Platform, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Avatar } from '@/components/Avatar';
 import { useTheme } from '@/theme/ThemeContext';
 import { api } from '@/api/endpoints';
 import { connectChat, ChatConnection } from '@/chat/stompClient';
@@ -22,7 +23,7 @@ const TIME_REVEAL_RIGHT = 50;
 const INPUT_MAX_HEIGHT = 220;
 
 export function ConversationScreen({ route, navigation }: Props) {
-  const { conversationId, otherName } = route.params;
+  const { conversationId, otherName, otherUserId, otherPhotoUrl } = route.params;
   const { colors, spacing, radius, typography } = useTheme();
   const { user } = useAuth();
   const [messages, setMessages] = useState<LocalMessage[]>([]);
@@ -35,8 +36,30 @@ export function ConversationScreen({ route, navigation }: Props) {
   const rowAnimatedStyle = useAnimatedStyle(() => ({ transform: [{ translateX: dragX.value }] }));
 
   useEffect(() => {
-    navigation.setOptions({ title: otherName });
-  }, [navigation, otherName]);
+    navigation.setOptions({
+      headerTitle: () => (
+        <Pressable
+          disabled={!otherUserId}
+          onPress={() => otherUserId && navigation.navigate('ProfileDetail', { userId: otherUserId, displayName: otherName })}
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            backgroundColor: colors.surface,
+            borderColor: colors.border,
+            borderWidth: 1,
+            borderRadius: radius.pill,
+            paddingVertical: 4,
+            paddingHorizontal: 8,
+          }}
+        >
+          <Avatar uri={otherPhotoUrl} name={otherName} size={28} />
+          <Text style={{ color: colors.text, fontWeight: '700', marginLeft: 8, maxWidth: 180 }} numberOfLines={1}>
+            {otherName}
+          </Text>
+        </Pressable>
+      ),
+    });
+  }, [navigation, otherName, otherUserId, otherPhotoUrl, colors, radius]);
 
   useEffect(() => {
     api.conversations.read(conversationId).catch(() => {});
@@ -58,6 +81,9 @@ export function ConversationScreen({ route, navigation }: Props) {
         onMessage: (msg) => {
           if (msg.conversationId !== conversationId) return;
           setMessages((curr) => reconcileIncoming(curr, msg, user?.userId));
+          if (msg.senderId !== user?.userId) {
+            api.conversations.read(conversationId).catch(() => {});
+          }
         },
         onRead: (receipt) => {
           if (receipt.conversationId !== conversationId) return;
@@ -81,8 +107,7 @@ export function ConversationScreen({ route, navigation }: Props) {
     };
   }, [conversationId, user?.userId]);
 
-  // The id of the most recent message I sent that the other person has read.
-  // Only this one shows the "Read" indicator (iMessage-style).
+
   const lastReadId = useMemo(() => {
     for (let i = messages.length - 1; i >= 0; i--) {
       const m = messages[i];
@@ -106,7 +131,6 @@ export function ConversationScreen({ route, navigation }: Props) {
     if (!content) return;
     if (!user) return;
 
-    // Optimistic message — shows immediately as "Sending…"
     const tempId = `local-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     const optimistic: LocalMessage = {
       id: tempId,
