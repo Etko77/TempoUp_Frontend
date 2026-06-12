@@ -12,12 +12,14 @@ import { LandingScreen } from '@/screens/LandingScreen';
 import { LoginScreen } from '@/screens/LoginScreen';
 import { RegisterScreen } from '@/screens/RegisterScreen';
 import { DiscoveryScreen } from '@/screens/DiscoveryScreen';
+import { BrowseScreen } from '@/screens/BrowseScreen';
 import { MatchesScreen } from '@/screens/MatchesScreen';
 import { ProfileScreen } from '@/screens/ProfileScreen';
 import { ConversationScreen } from '@/screens/ConversationScreen';
 import { MySportsScreen } from '@/screens/MySportsScreen';
 import { SportPickerScreen } from '@/screens/SportPickerScreen';
 import { ProfileDetailScreen } from '@/screens/ProfileDetailScreen';
+import { SportDiscoveryScreen } from '@/screens/SportDiscoveryScreen';
 
 import type { AuthStackParamList, MainStackParamList, MainTabsParamList } from './types';
 
@@ -56,6 +58,11 @@ function MainTabs() {
         options={{ tabBarIcon: ({ color }) => <MaterialCommunityIcons name="arm-flex" size={22} color={color} /> }}
       />
       <Tabs.Screen
+        name="Browse"
+        component={BrowseScreen}
+        options={{ tabBarIcon: ({ color }) => <MaterialCommunityIcons name="view-grid-outline" size={20} color={color} /> }}
+      />
+      <Tabs.Screen
         name="Matches"
         component={MatchesScreen}
         options={{ tabBarIcon: ({ color }) => <TabIcon glyph="✦" color={color} /> }}
@@ -81,6 +88,7 @@ function MainNavigator() {
         headerStyle: { backgroundColor: colors.background },
         headerTintColor: colors.text,
         headerTitleStyle: { fontWeight: '700' },
+        headerBackTitleVisible: false,
       }}
     >
       <MainStack.Screen name="Tabs" component={MainTabs} options={{ headerShown: false }} />
@@ -88,6 +96,11 @@ function MainNavigator() {
       <MainStack.Screen name="MySports" component={MySportsScreen} options={{ title: 'My sports' }} />
       <MainStack.Screen name="SportPicker" component={SportPickerScreen} options={{ title: 'Choose sport' }} />
       <MainStack.Screen name="ProfileDetail" component={ProfileDetailScreen} options={{ title: 'Profile' }} />
+      <MainStack.Screen
+        name="SportDiscovery"
+        component={SportDiscoveryScreen}
+        options={({ route }) => ({ title: route.params.sportName })}
+      />
     </MainStack.Navigator>
   );
 }

@@ -8,6 +8,7 @@ export type AuthStackParamList = {
 
 export type MainTabsParamList = {
   Discover: undefined;
+  Browse: undefined;
   Matches: undefined;
   Profile: undefined;
 };
@@ -18,4 +19,5 @@ export type MainStackParamList = {
   MySports: undefined;
   SportPicker: { sportId?: UUID } | undefined;
   ProfileDetail: { userId: UUID; displayName?: string };
+  SportDiscovery: { sportId: UUID; sportName: string };
 };
