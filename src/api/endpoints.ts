@@ -69,6 +69,8 @@ export const api = {
   discovery: {
     feed: (radiusKm?: number, limit?: number) =>
       request<DiscoveryCandidate[]>('/api/discovery', { query: { radiusKm, limit } }),
+    feedBySport: (sportId: UUID, radiusKm?: number, limit?: number) =>
+      request<DiscoveryCandidate[]>(`/api/discovery/by-sport/${sportId}`, { query: { radiusKm, limit } }),
   },
   swipes: {
     swipe: (body: SwipeRequest) => request<SwipeResult>('/api/swipes', { method: 'POST', body }),
