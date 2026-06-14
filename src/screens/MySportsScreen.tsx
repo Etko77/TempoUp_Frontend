@@ -70,7 +70,7 @@ export function MySportsScreen() {
               <View style={{ flex: 1 }}>
                 <Text style={[typography.bodyBold, { color: colors.text }]}>
                   {item.sportName}
-                  {item.priority ? <Text style={{ color: colors.primary }}>  ★ Priority</Text> : null}
+                  {item.priority ? <Text style={{ color: colors.primary }}>  Priority</Text> : null}
                 </Text>
                 <Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 2 }}>
                   {item.proficiencyLevel.toLowerCase()}

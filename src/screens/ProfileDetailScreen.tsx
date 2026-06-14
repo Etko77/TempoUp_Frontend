@@ -84,7 +84,7 @@ export function ProfileDetailScreen({ route, navigation }: Props) {
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <Text style={[typography.bodyBold, { color: colors.text, flex: 1 }]}>
                   {sp.sportName}
-                  {sp.priority ? <Text style={{ color: colors.primary }}>  ★ Priority</Text> : null}
+                  {sp.priority ? <Text style={{ color: colors.primary }}>   Priority</Text> : null}
                 </Text>
                 <Chip label={sp.proficiencyLevel.toLowerCase()} />
               </View>

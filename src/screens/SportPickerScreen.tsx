@@ -250,7 +250,7 @@ export function SportPickerScreen({ route, navigation }: Props) {
               }}
             >
               <Text style={{ color: colors.text, flex: 1 }}>
-                ⭐ Priority sport — shown first on your profile
+                Priority sport — shown first on your profile
               </Text>
               <Text style={{ color: colors.primary, fontWeight: '700' }}>{priority ? 'ON' : 'OFF'}</Text>
             </Pressable>

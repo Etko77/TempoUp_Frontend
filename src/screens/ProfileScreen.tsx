@@ -233,7 +233,7 @@ export function ProfileScreen() {
 
               <View style={{ height: 1, backgroundColor: colors.border, marginVertical: spacing.md }} />
 
-              <Text style={[typography.caption, { color: colors.textSecondary }]}>Starred skills</Text>
+              <Text style={[typography.caption, { color: colors.textSecondary }]}>Best skills</Text>
               {starredSkills.length > 0 ? (
                 <View style={{ marginTop: spacing.xs, gap: 4 }}>
                   {starredSkills.map((sk) => {
@@ -249,7 +249,7 @@ export function ProfileScreen() {
                 </View>
               ) : (
                 <Text style={[typography.body, { color: colors.textSecondary, marginTop: spacing.xs }]}>
-                  Star up to 3 skills in Manage my sports to feature them.
+                  Mark up to 3 best skills in Manage my sports to feature them.
                 </Text>
               )}
 

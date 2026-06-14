@@ -124,14 +124,14 @@ export function SwipeDeck({ title, subtitle, fetchFeed, showHeader = true }: Pro
 
   if (loading) {
     return (
-      <Screen>
+      <Screen topInset={showHeader}>
         <View style={styles.center}><Text style={{ color: colors.textSecondary }}>Loading…</Text></View>
       </Screen>
     );
   }
   if (!current) {
     return (
-      <Screen>
+      <Screen topInset={showHeader}>
         <View style={styles.center}>
           <Text style={[typography.h2, { color: colors.text, marginBottom: spacing.sm }]}>
             No one new right now
@@ -147,7 +147,7 @@ export function SwipeDeck({ title, subtitle, fetchFeed, showHeader = true }: Pro
   }
 
   return (
-    <Screen padded={false}>
+    <Screen padded={false} topInset={showHeader}>
       {showHeader ? (
         <View style={{ padding: spacing.lg, paddingBottom: 0 }}>
           <Text style={[typography.h2, { color: colors.primaryDeep }]}>{title}</Text>
