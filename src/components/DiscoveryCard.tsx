@@ -37,7 +37,7 @@ export function DiscoveryCardInner({
       </Text>
       {candidate.city ? (
         <Text style={{ color: colors.textSecondary, marginTop: 4, textAlign: 'center' }}>
-          {candidate.city}{candidate.distanceKm != null ? ` · ${candidate.distanceKm.toFixed(1)} km away` : ''}
+          {candidate.city}
         </Text>
       ) : null}
 

@@ -66,7 +66,6 @@ export function ProfileScreen() {
     bio: bio.trim() || null,
     city: city.trim() || null,
     photoUrl: photoUrl.trim() || null,
-    distanceKm: null,
     sharedSports: sports.length,
     sharedSkills: sports.reduce((n, s) => n + s.skills.length, 0),
     sharedSportNames: sports.map((s) => s.sportName),

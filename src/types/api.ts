@@ -32,8 +32,6 @@ export interface ProfileResponse {
   gender: Gender | null;
   photoUrl: string | null;
   city: string | null;
-  latitude: number | null;
-  longitude: number | null;
 }
 
 export interface UpdateProfileRequest {
@@ -43,8 +41,6 @@ export interface UpdateProfileRequest {
   gender?: Gender;
   photoUrl?: string;
   city?: string;
-  latitude?: number;
-  longitude?: number;
 }
 
 // ----- Sports & skills ----------------------------------------------
@@ -140,7 +136,6 @@ export interface DiscoveryCandidate {
   bio: string | null;
   city: string | null;
   photoUrl: string | null;
-  distanceKm: number | null;
   sharedSports: number;
   sharedSkills: number;
   sharedSportNames: string[];
