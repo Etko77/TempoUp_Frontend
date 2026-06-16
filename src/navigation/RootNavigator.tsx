@@ -7,6 +7,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
 import { useTheme } from '@/theme/ThemeContext';
 import { useAuth } from '@/auth/AuthContext';
+import { useLocationSync } from '@/location/useLocationSync';
 
 import { LandingScreen } from '@/screens/LandingScreen';
 import { LoginScreen } from '@/screens/LoginScreen';
@@ -41,6 +42,7 @@ function MainTabs() {
   const { colors } = useTheme();
   return (
     <Tabs.Navigator
+      initialRouteName="Profile"
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
@@ -108,6 +110,10 @@ function MainNavigator() {
 export function RootNavigator() {
   const { user, isBootstrapping } = useAuth();
   const { themeName, colors } = useTheme();
+
+  // Once signed in, capture the device location (with permission) so the
+  // backend can rank nearby partners higher and show distances on Discover.
+  useLocationSync(!!user);
 
   if (isBootstrapping) {
     return (

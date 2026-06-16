@@ -15,6 +15,13 @@ export function DiscoveryCardInner({
   bottomInset?: number;
 }) {
   const { colors, spacing, typography } = useTheme();
+
+  const distanceLabel =
+    !selfPreview && candidate.distanceKm != null
+      ? `${Math.max(1, Math.round(candidate.distanceKm))} km away`
+      : null;
+  const locationLine = [candidate.city, distanceLabel].filter(Boolean).join(' · ');
+
   return (
     <View style={{ flex: 1, padding: spacing.xl, paddingBottom: spacing.xl + bottomInset }}>
       {/* Photo takes whatever vertical space is left so the info below always fits. */}
@@ -35,9 +42,9 @@ export function DiscoveryCardInner({
       <Text style={[typography.h2, { color: colors.text, textAlign: 'center' }]}>
         {candidate.displayName}
       </Text>
-      {candidate.city ? (
+      {locationLine ? (
         <Text style={{ color: colors.textSecondary, marginTop: 4, textAlign: 'center' }}>
-          {candidate.city}
+          {locationLine}
         </Text>
       ) : null}
 
