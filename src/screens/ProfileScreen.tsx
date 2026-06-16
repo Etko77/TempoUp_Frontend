@@ -16,6 +16,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { MainStackParamList } from '@/navigation/types';
 import * as ImagePicker from 'expo-image-picker';
 import { uploadImageAsync } from '@/utils/uploadImage';
+import { captureAndSyncLocation } from '@/location/useLocationSync';
 
 const AVATAR_SIZE = 132;
 
@@ -33,6 +34,7 @@ export function ProfileScreen() {
   const [editing, setEditing] = useState(false);
   const [sports, setSports] = useState<UserSportResponse[]>([]);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [locating, setLocating] = useState(false);
 
   const hydrate = useCallback((p: ProfileResponse) => {
     setProfile(p);
@@ -97,6 +99,21 @@ export function ProfileScreen() {
     if (profile) hydrate(profile);
     setEditing(false);
   }, [profile, hydrate]);
+
+  const updateLocation = useCallback(async () => {
+    setLocating(true);
+    try {
+      const result = await captureAndSyncLocation();
+      if (result.ok) {
+        await load();
+        Alert.alert('Location updated', 'Nearby partners will now rank higher and show a distance.');
+      } else {
+        Alert.alert('Could not update location', result.message);
+      }
+    } finally {
+      setLocating(false);
+    }
+  }, [load]);
 
   // Shared pipeline for both camera capture and gallery selection.
   const handlePicked = useCallback(async (result: ImagePicker.ImagePickerResult) => {
@@ -218,6 +235,23 @@ export function ProfileScreen() {
               <Text style={[typography.body, { color: bio.trim() ? colors.text : colors.textSecondary, marginTop: spacing.xs, lineHeight: 21 }]}>
                 {bio.trim() || 'No bio yet — tap Edit profile to add a few words about your training.'}
               </Text>
+
+              <View style={{ height: 1, backgroundColor: colors.border, marginVertical: spacing.md }} />
+
+              <Text style={[typography.caption, { color: colors.textSecondary }]}>Location</Text>
+              <Text style={[typography.body, { color: profile?.latitude != null ? colors.text : colors.textSecondary, marginTop: spacing.xs }]}>
+                {profile?.latitude != null
+                  ? 'Shared — used to rank nearby partners and show distances.'
+                  : 'Not shared yet — partners can’t see how far away you are.'}
+              </Text>
+              <View style={{ marginTop: spacing.md }}>
+                <Button
+                  title={locating ? 'Updating…' : profile?.latitude != null ? 'Update my location' : 'Share my location'}
+                  variant="secondary"
+                  onPress={updateLocation}
+                  loading={locating}
+                />
+              </View>
             </View>
 
             {/* Highlights card — what others see first */}

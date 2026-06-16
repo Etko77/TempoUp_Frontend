@@ -3,6 +3,7 @@ import { View, Text, Image } from 'react-native';
 import { Avatar } from '@/components/Avatar';
 import { Chip } from '@/components/Chip';
 import { useTheme } from '@/theme/ThemeContext';
+import { formatKmAway } from '@/utils/distance';
 import type { DiscoveryCandidate } from '@/types/api';
 
 export function DiscoveryCardInner({
@@ -16,10 +17,7 @@ export function DiscoveryCardInner({
 }) {
   const { colors, spacing, typography } = useTheme();
 
-  const distanceLabel =
-    !selfPreview && candidate.distanceKm != null
-      ? `${Math.max(1, Math.round(candidate.distanceKm))} km away`
-      : null;
+  const distanceLabel = selfPreview ? null : formatKmAway(candidate.distanceKm);
   const locationLine = [candidate.city, distanceLabel].filter(Boolean).join(' · ');
 
   return (

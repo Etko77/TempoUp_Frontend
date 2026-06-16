@@ -7,6 +7,7 @@ import { Loading } from '@/components/Loading';
 import { useTheme } from '@/theme/ThemeContext';
 import { api } from '@/api/endpoints';
 import { formatSkillData } from '@/utils/metrics';
+import { haversineKm, formatKmAway } from '@/utils/distance';
 import type { ProfileResponse, UserSportResponse } from '@/types/api';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { MainStackParamList } from '@/navigation/types';
@@ -17,6 +18,7 @@ export function ProfileDetailScreen({ route, navigation }: Props) {
   const { userId, displayName } = route.params;
   const { colors, spacing, radius, typography } = useTheme();
   const [profile, setProfile] = useState<ProfileResponse | null>(null);
+  const [me, setMe] = useState<ProfileResponse | null>(null);
   const [sports, setSports] = useState<UserSportResponse[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -26,11 +28,13 @@ export function ProfileDetailScreen({ route, navigation }: Props) {
 
   useEffect(() => {
     (async () => {
-      const [p, s] = await Promise.all([
+      const [p, s, mine] = await Promise.all([
         api.profile.byUser(userId).catch(() => null),
         api.mySports.byUser(userId).catch(() => [] as UserSportResponse[]),
+        api.profile.me().catch(() => null),
       ]);
       setProfile(p);
+      setMe(mine);
       setSports([...s].sort((a, b) => Number(b.priority) - Number(a.priority)));
       setLoading(false);
     })();
@@ -39,6 +43,8 @@ export function ProfileDetailScreen({ route, navigation }: Props) {
   if (loading) return <Loading label="Loading profile…" />;
 
   const name = profile?.displayName ?? displayName ?? 'Athlete';
+  const distanceLabel =
+    me && profile ? formatKmAway(haversineKm(me, profile)) : null;
 
   return (
     <Screen padded={false}>
@@ -54,8 +60,10 @@ export function ProfileDetailScreen({ route, navigation }: Props) {
             <Avatar uri={null} name={name} size={140} />
           )}
           <Text style={[typography.h2, { color: colors.text, marginTop: spacing.lg }]}>{name}</Text>
-          {profile?.city ? (
-            <Text style={{ color: colors.textSecondary, marginTop: 4 }}>{profile.city}</Text>
+          {profile?.city || distanceLabel ? (
+            <Text style={{ color: colors.textSecondary, marginTop: 4 }}>
+              {[profile?.city, distanceLabel].filter(Boolean).join(' · ')}
+            </Text>
           ) : null}
           {profile?.bio ? (
             <Text style={[typography.body, { color: colors.text, textAlign: 'center', marginTop: spacing.md }]}>
