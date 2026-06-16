@@ -23,6 +23,8 @@ export default {
           'TempoUp needs access to your photos so you can set a profile picture.',
         NSCameraUsageDescription:
           'TempoUp needs access to your camera so you can take a profile picture.',
+        NSLocationWhenInUseUsageDescription:
+          'TempoUp uses your location to show how far away potential partners are and to rank nearby matches higher.',
       },
     },
 
@@ -31,7 +33,18 @@ export default {
       adaptiveIcon: {
         backgroundColor: "#1E3A8A",
       },
+      permissions: ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"],
     },
+
+    plugins: [
+      [
+        "expo-location",
+        {
+          locationWhenInUsePermission:
+            'TempoUp uses your location to show how far away potential partners are and to rank nearby matches higher.',
+        },
+      ],
+    ],
 
     web: {
       bundler: "metro",
